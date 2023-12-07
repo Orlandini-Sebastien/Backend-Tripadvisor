@@ -8,14 +8,45 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-app.post('/form', function (req, res) {
-   console.log(req.body);
-})
+// Configuration de Mailgun
+const mailgun = new Mailgun(formData);
+const client = mailgun.client({
+  username: "seb",
+  key: process.env.MAILGUN_API_KEY
+});
+
+app.post("/form", async(req, res) => {
+  try {
+    console.log("req.body>>>",req.body);
+    const { firstname, lastname, email, message } = req.body;
+
+    //  Create object  
+    const messageData = {
+      from: `${firstname} ${lastname} <${email}>`,
+      to: "seb.orlandini@gmail.com",
+      subject: `Formulaire JS`,
+      text: message,
+    };
+
+    console.log("messageDATA >>>",messageData)
+
+    // Send info to Mailgun to create email et send this
+    const response = await client.messages.create(
+      process.env.DOMAINE, 
+      messageData
+    );
+
+    console.log("response>>>",response);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 app.all("*", (req,res)=>{
     res.status(404).json({message: "😞 Not found 😞"});
 })
 
-app.listen(process.env.PORT, (req,res)=>{
+app.listen(3000 , (req,res)=>{
   console.log("🚀🚀 Server has started 🚀🚀");
 } );
